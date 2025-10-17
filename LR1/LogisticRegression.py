@@ -17,7 +17,7 @@ from sklearn.metrics import (confusion_matrix, classification_report, roc_auc_sc
                              accuracy_score, f1_score, precision_score, recall_score)
 
 # cell 2: загрузка данных
-df = pd.read_csv('adult.csv')  # поменяйте путь/имя при необходимости
+df = pd.read_csv('adult.csv')
 df.head()
 # cell 3: первичный осмотр
 print(df.shape)
@@ -114,7 +114,6 @@ print('F1:', f1_score(y_test, y_pred))
 print('ROC AUC:', roc_auc_score(y_test, y_proba))
 print('\nClassification report:\n', classification_report(y_test, y_pred))
 
-# confusion matrix
 cm = confusion_matrix(y_test, y_pred)
 plt.figure(figsize=(5,4))
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['Stayed','Exited'], yticklabels=['Stayed','Exited'])
@@ -148,9 +147,7 @@ plt.tight_layout()
 plt.show()
 
 # cell 11: извлечение имен признаков и коэффициентов
-# получим имена после преобразования
 preproc = best_model.named_steps['preprocessor']
-# имена числовых признаков
 num_cols = numeric_features
 
 # имена one-hot-кодуемых категориальных признаков
