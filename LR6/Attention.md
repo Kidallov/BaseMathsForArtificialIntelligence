@@ -122,8 +122,6 @@ Implementation hint:
 - `decoder_target` заканчивается `EOS`;
 - ожидаемые формы: `(N, 10)`, `(N, 11)`, `(N, 11, 1)`.
 
-Если застряли уже здесь, вернитесь к [seq2seq-guide из `01-RNN / ЛР03`](../../01-RNN/lab/guides/03_gru_seq2seq_tokens_beginner.md).
-
 ```python
 PAD_ID = 0
 SOS_ID = 10
@@ -240,8 +238,6 @@ Implementation hint:
 - decoder: `Embedding(mask_zero=True)` -> `GRU(return_sequences=True, return_state=True, initial_state=encoder_state)`;
 - attention: `Attention(score_mode='dot')([decoder_outputs, encoder_outputs], return_attention_scores=True)`;
 - далее объедините `decoder_outputs` и `context` по последней оси и завершите модель `Dense(vocab_size, activation='softmax')`.
-
-Если путаетесь в ролях `query` и `value`, откройте [walkthrough](guides/02_attention_walkthrough.md).
 
 ```python
 def build_model(vocab_size: int = VOCAB_SIZE, emb_dim: int = 32, latent_dim: int = 64):
@@ -452,13 +448,9 @@ Implementation hint:
 - целевой тензор — `dec_tgt_train`;
 - используйте `validation_split=0.2`, `batch_size=64` и аргумент `epochs`.
 
-Если застряли, откройте [debugging playbook](guides/03_attention_debugging_playbook.md).
-
 ```python
 def train_model(model, enc_train, dec_in_train, dec_tgt_train, epochs: int = 18):
     # TODO 14: обучите модель через model.fit
-    print("Форма dec_tgt_train:", dec_tgt_train.shape)
-    print("Пример dec_tgt_train[0]:", dec_tgt_train[0])
     history = model.fit(
         [enc_train, dec_in_train],
         dec_tgt_train,
@@ -474,18 +466,6 @@ history = train_model(model, enc_train, dec_in_train, dec_tgt_train)
 
 Вывод:
 ```
-Форма dec_tgt_train: (6400, 11, 1)
-Пример dec_tgt_train[0]: [[ 8]
- [ 6]
- [ 9]
- [ 4]
- [ 1]
- [ 2]
- [ 3]
- [ 2]
- [ 4]
- [ 4]
- [11]]
 Epoch 1/18
 80/80 ━━━━━━━━━━━━━━━━━━━━ 2s 9ms/step - accuracy: 0.2991 - loss: 2.3556 - val_accuracy: 0.4357 - val_loss: 1.5608
 Epoch 2/18
@@ -537,8 +517,6 @@ print('Мини-проверка обучения: OK')
 - `token_accuracy` — доля корректных токенов;
 - `exact_match` — доля последовательностей, где все значимые токены предсказаны верно.
 
-Дополнительно внимание проверяется качественно через heatmap одного примера.
-
 ### Подсказка к TODO 15: метрики
 
 Концептуальная подсказка:
@@ -549,8 +527,6 @@ Implementation hint:
 - `target = dec_tgt_test[:, :, 0]`;
 - `mask = (target != PAD_ID)`;
 - последовательность считается правильной только если совпали все значимые позиции.
-
-Если застряли, откройте раздел про `exact_match` в [walkthrough](guides/02_attention_walkthrough.md).
 
 ```python
 def evaluate_model(model, enc_test, dec_in_test, dec_tgt_test):
