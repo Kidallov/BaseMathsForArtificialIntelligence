@@ -230,12 +230,12 @@ class TokenAndPositionEmbedding(layers.Layer):
         Raises:
           NotImplementedError: Пока шаг `TODO 2` не реализован.
         """
-        # TODO 2.1: построить позиции через tf.range
-        positions = tf.range(start=0, limit=tf.shape(inputs)[-1], delta=1) # задачем диапазон, стартуем с 0 и до количсетва тензора inputs не включая его самого, разделитель 1(по умолчанию)
-        # TODO 2.2: получить token embeddings и position embeddings
+        
+        positions = tf.range(start=0, limit=tf.shape(inputs)[-1], delta=1) # задаем диапазон, стартуем с 0 и до количсетва тензора inputs не включая его самого, разделитель 1(по умолчанию)
+        
         token_embeddings = self.token_emb(inputs) # получем token использую Embedding реализованный раннее
         position_embeddings = self.pos_emb(positions) # получем position использую Embedding реализованный раннее
-        # TODO 2.3: вернуть их сумму
+        
         result = token_embeddings + position_embeddings # получаем сумму
 
         return result
@@ -253,7 +253,7 @@ class TokenAndPositionEmbedding(layers.Layer):
         Raises:
           NotImplementedError: Пока шаг `TODO 2` не реализован.
         """
-        # TODO 2.4: вернуть mask от token embedding
+        
         return self.token_emb.compute_mask(inputs) # получает на вход послежовательность и обрабатывает ее, возвращая True на местах реальных значений и False на местах 0
 
 
@@ -335,14 +335,10 @@ class TransformerEncoderBlock(layers.Layer):
         """
 
         if mask is not None:
-        # TODO 3.1: Соберите attention_mask как пересечение query и key масок.
-        # Подсказка: query_mask = mask[:, :, None], key_mask = mask[:, None, :].
-          query_mask = tf.cast(mask[:, :, None], dtype=bool)
-          key_mask = tf.cast(mask[:, None, :], dtype=bool)
-          attention_mask = query_mask & key_mask
+          query_mask = tf.cast(mask[:, :, None], dtype=bool) # Маска запросов. None - позволит позже транслировать (broadcast) с маской ключей.
+          key_mask = tf.cast(mask[:, None, :], dtype=bool) # Маска ключей. None - создает измерение для транслирования.
+          attention_mask = query_mask & key_mask # Создаем 2D-маску.
 
-        # TODO 3.2: Вызовите self.att(..., return_attention_scores=...).
-        # Внутри метода call вашего слоя
         attention_output, attention_scores = self.att(
                 query=inputs,                 # 1. Что ищем
                 value=inputs,                 # 2. Что достаем
@@ -350,10 +346,9 @@ class TransformerEncoderBlock(layers.Layer):
                 attention_mask=attention_mask,# 4. Куда смотреть нельзя
                 return_attention_scores=True) # 5. Просим вернуть веса
             
-        # TODO 3.3: Выполните residual + LayerNorm + FFN + residual + LayerNorm.
         attention_output = self.dropout1(attention_output, training=training) # dropout 1
         x = self.layernorm1(inputs + attention_output)  # Residual + LayerNorm 1
-        ffn_output = self.ffn(x) #
+        ffn_output = self.ffn(x) # Пропускаем через позиционно-независимую сеть из двух плотных слоев для нелинейного преобразования признаков
         ffn_output = self.dropout2(ffn_output, training=training) # dropout 2
         x = self.layernorm2(x + ffn_output)   # Residual + LayerNorm 2
         
@@ -409,7 +404,6 @@ keras.utils.set_random_seed(SEED)
 transformer_inputs = keras.Input(shape=(SEQ_LEN,), dtype='int32', name='tokens')
 padding_mask = layers.Lambda(lambda x: tf.not_equal(x, PAD_ID), name='padding_mask')(transformer_inputs)
 
-# TODO 4.1: создать TokenAndPositionEmbedding и TransformerEncoderBlock
 embedding_layer = TokenAndPositionEmbedding(
     vocab_size=VOCAB_SIZE,      # Размер словаря
     maxlen=SEQ_LEN,             # Максимальный размер
@@ -422,11 +416,9 @@ encoder_layer = TransformerEncoderBlock(
     ff_dim=FF_DIM,              # Активация для первого плотного слоя в двухслойной нейронной сети прямого распространения
 )
 
-# TODO 4.2: прогнать inputs через embedding и encoder block
 x = embedding_layer(transformer_inputs) # Подаем входные данные
 x = encoder_layer(x, mask=padding_mask) # Подаем входные данные и маску
 
-# TODO 4.3: сделать masked average pooling, небольшой Dense classifier head и финальный sigmoid
 output = tf.keras.layers.GlobalAveragePooling1D()(x, mask=padding_mask) # создаем объект (пустые скобки), далее «вызываем» его, передавая данные(входные данные, маска)
 
 x = tf.keras.layers.Dense(64, activation='relu')(output) # Ищем нелинейные завиимости в нашем слое с помощью relu
@@ -435,7 +427,6 @@ predictions = tf.keras.layers.Dense(1, activation='sigmoid')(x) # Сжимает
 
 model = tf.keras.Model(inputs=transformer_inputs, outputs=predictions) # Соединаем наши данные в итоговую модель
 
-# TODO 4.4: скомпилировать model
 # Скомпилировали модель
 model.compile(
     optimizer='adam',
@@ -454,8 +445,6 @@ model.summary()
 - train и validation будут сравниваться отдельно от финального test.
 
 ```python
-# TODO 5.1: обучить model.fit(...) с validation_split
-# TODO 5.2: сохранить результат в history
 history = model.fit(
     x=X_train,               # Ваши входные данные (матрица индексов токенов)
     y=y_train,               # Правильные ответы (0 или 1)
