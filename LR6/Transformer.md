@@ -496,24 +496,24 @@ for seq, prob in zip(paired_examples, paired_probs):
     print(seq, '-> prob=', round(float(prob), 4), 'label=', label)
 
 # TODO 6.1-6.3: Компактное решение
-sample_index = 0
-sample_tokens = X_test[sample_index:sample_index + 1]
-sample_length = (sample_tokens[0] != PAD_ID).sum()
+sample_index = 0 # Берем первый пример из тестовой выборки
+sample_tokens = X_test[sample_index:sample_index + 1] # Берем срез от sample_index до sample_index+1, сохраняя размерность (1, seq_len)
+sample_length = (sample_tokens[0] != PAD_ID).sum() # Берем первый и единственный элемент батча, сравниваем с ID и получаем маску (True/False) после чего суммируем полученные ответы.
 
 # Получаем encoder и эмбеддинги
-encoder = model.get_layer('transformer_encoder_block_1')
-embeddings = model.get_layer('token_and_position_embedding_1')(sample_tokens)
-mask = tf.not_equal(sample_tokens, PAD_ID)
+encoder = model.get_layer('transformer_encoder_block_1') # Достаем encoder блок из обученной модели
+embeddings = model.get_layer('token_and_position_embedding_1')(sample_tokens) # Вызываем embedding слой
+mask = tf.not_equal(sample_tokens, PAD_ID) # True для реальных токенов, False для padding
 
 # Получаем attention scores
-_, attention_scores = encoder(embeddings, mask=mask, return_attention_scores=True)
+_, attention_scores = encoder(embeddings, mask=mask, return_attention_scores=True) # Вызываем encoder: embeddings - входные векторы, mask - маска для игнорирования padding, return_attention_scores=True - просим encoder вернуть веса внимания, _ - игнорируем выход encoder (закодированные векторы), так как нас интересуют только веса.
 
 # Конвертируем в numpy, усредняем и обрезаем
-attention_np = attention_scores.numpy()  # (1, heads, seq_len, seq_len)
-mean_attention = attention_np[0].mean(axis=0)[:sample_length, :sample_length]
+attention_np = attention_scores.numpy()  # Преводим в массив Numpy
+mean_attention = attention_np[0].mean(axis=0)[:sample_length, :sample_length] # attention_np[0] - берем первый (и единственный) пример из батча, .mean(axis=0) - усредняем по головам, [:sample_length, :sample_length] - обрезаем до реальной длины.
 
-print(f'Attention shape: {mean_attention.shape}')
-token_labels = [str(token) for token in sample_tokens[0][:sample_length]]
+print(f'Attention shape: {mean_attention.shape}') 
+token_labels = [str(token) for token in sample_tokens[0][:sample_length]] # Создаем текстовые метки для каждого токена, sample_tokens[0] - первый пример из батча, [:sample_length] - берем только реальные токены (без padding), str(token) - преобразуем число в строку.
 
 plt.figure(figsize=(6, 5))
 plt.imshow(mean_attention, cmap='magma', aspect='auto')
